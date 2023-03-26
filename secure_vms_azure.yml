@@ -1,0 +1,70 @@
+# Define the resource group that will contain the Azure resources
+resourceGroup: myResourceGroup
+
+# Define the virtual network and subnet that the VMs will use
+virtualNetwork:
+  name: myVirtualNetwork
+  addressPrefix: 10.0.0.0/16
+  subnet:
+    name: mySubnet
+    addressPrefix: 10.0.0.0/24
+
+# Define the VM availability set for high availability
+availabilitySet:
+  name: myAvailabilitySet
+
+# Define the load balancer for distributing traffic across VMs
+loadBalancer:
+  name: myLoadBalancer
+  publicIP:
+    name: myPublicIP
+  frontendIPConfig:
+    name: myFrontendIPConfig
+    subnetRef: "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('virtualNetwork').name, variables('virtualNetwork').subnet.name)]"
+  backendAddressPool:
+    name: myBackendAddressPool
+  probes:
+    - name: myProbe
+      protocol: Tcp
+      port: 80
+  loadBalancingRules:
+    - name: myLoadBalancingRule
+      frontendIPConfigRef: "[concat(resourceGroup().id, '/providers/Microsoft.Network/loadBalancers/', variables('loadBalancer').name, '/frontendIPConfigurations/', variables('loadBalancer').frontendIPConfig.name)]"
+      backendAddressPoolRef: "[concat(resourceGroup().id, '/providers/Microsoft.Network/loadBalancers/', variables('loadBalancer').name, '/backendAddressPools/', variables('loadBalancer').backendAddressPool.name)]"
+      protocol: Tcp
+      frontendPort: 80
+      backendPort: 80
+      probeRef: "[concat(resourceGroup().id, '/providers/Microsoft.Network/loadBalancers/', variables('loadBalancer').name, '/probes/', variables('loadBalancer').probes[0].name)]"
+
+# Define the virtual machines
+virtualMachines:
+  - name: myVM1
+    availabilitySetRef: "[resourceId('Microsoft.Compute/availabilitySets', variables('availabilitySet').name)]"
+    nicName: myNIC1
+    vmSize: Standard_D2_v2
+    osDiskName: myOsDisk1
+    osType: Linux
+    imagePublisher: Canonical
+    imageOffer: UbuntuServer
+    imageSku: '16.04-LTS'
+    dataDiskSizeGB: 100
+  - name: myVM2
+    availabilitySetRef: "[resourceId('Microsoft.Compute/availabilitySets', variables('availabilitySet').name)]"
+    nicName: myNIC2
+    vmSize: Standard_D2_v2
+    osDiskName: myOsDisk2
+    osType: Linux
+    imagePublisher: Canonical
+    imageOffer: UbuntuServer
+    imageSku: '16.04-LTS'
+    dataDiskSizeGB: 100
+
+# Define the network interfaces for the VMs
+networkInterfaces:
+  - name: myNIC1
+    ipConfigName: myIPConfig1
+    subnetRef: "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('virtualNetwork').name, variables('virtualNetwork').subnet.name)]"
+    loadBalancerBackendAddressPools:
+      - id: "[concat(resourceGroup().id, '/providers/Microsoft.Network/loadBalancers/', variables('loadBalancer').name, '/backendAddressPools/', variables('loadBalancer').backendAddressPool.name)]"
+  - name: myNIC2
+    ipConfigName:

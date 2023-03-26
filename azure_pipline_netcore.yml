@@ -1,0 +1,43 @@
+# Define a trigger that runs the pipeline when changes are made to the master branch
+trigger:
+- master
+
+# Use an Ubuntu VM as the build agent
+pool:
+  vmImage: 'ubuntu-latest'
+
+# Define pipeline variables for the build configuration
+variables:
+  buildConfiguration: 'Release'
+
+# Define pipeline steps
+steps:
+
+  # Step 1: Use the DotNetCoreCLI task to build the .NET Core application
+  - task: DotNetCoreCLI@2
+    inputs:
+      command: 'build'
+      projects: '**/*.csproj'  # Build all .csproj files in the repository
+      arguments: '--configuration $(buildConfiguration)'  # Use the build configuration defined earlier
+
+  # Step 2: Use the DotNetCoreCLI task to run unit tests on the application
+  - task: DotNetCoreCLI@2
+    inputs:
+      command: 'test'
+      projects: '**/*Tests.csproj'  # Run tests in all *Tests.csproj files in the repository
+      arguments: '--configuration $(buildConfiguration)'  # Use the build configuration defined earlier
+
+  # Step 3: Use the DotNetCoreCLI task to publish the application as a package
+  - task: DotNetCoreCLI@2
+    inputs:
+      command: 'publish'
+      projects: '**/*.csproj'  # Publish all .csproj files in the repository
+      arguments: '--configuration $(buildConfiguration) --output $(Build.ArtifactStagingDirectory)'  # Use the build configuration and output directory defined earlier
+
+  # Step 4: Use the PublishBuildArtifacts task to publish the build artifacts to an artifact feed
+  - task: PublishBuildArtifacts@1
+    inputs:
+      pathtoPublish: '$(Build.ArtifactStagingDirectory)'  # Publish artifacts from the output directory defined earlier
+      artifactName: 'drop'  # Name the artifact drop
+      publishLocation: 'Container'  # Publish the artifact to an Azure DevOps artifact feed
+

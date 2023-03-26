@@ -1,0 +1,20 @@
+// Define the query to retrieve the log data to be monitored
+// This example retrieves the last 5 minutes of data for the Application Log
+// and looks for any error or warning events
+let logQuery = Heartbeat
+| where TimeGenerated >= ago(5m)
+| where SeverityLevel == 2 or SeverityLevel == 3
+| where Category == "Application"
+| project Computer, TimeGenerated, SeverityLevel, Message;
+
+// Define the alert rule
+// This example creates an alert rule that triggers an email notification
+// when the log query returns any results
+let alertRule = create email alert myapp-log-alert
+severity = 2
+threshold = 1
+query_timeout = 1m
+email_subject = "Application Log Alert"
+email_body = "The following events were logged in the Application Log:\n{{#results}}\n{{Computer}}\n{{TimeGenerated}}\n{{SeverityLevel}}\n{{Message}}\n{{/results}}"
+to = ["email@example.com"]
+where logQuery;

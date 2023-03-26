@@ -1,0 +1,53 @@
+# Define the Kubernetes deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: myapp-deployment
+  labels:
+    app: myapp
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: myapp
+  template:
+    metadata:
+      labels:
+        app: myapp
+    spec:
+      containers:
+        - name: myapp-container
+          image: myregistry/myapp:latest  # Use the latest version of the container image from the container registry
+          ports:
+            - containerPort: 80  # Expose port 80 on the container
+          env:
+            - name: DB_HOST
+              value: mydb  # Set the environment variable for the database host
+            - name: DB_PORT
+              value: "5432"  # Set the environment variable for the database port
+            - name: DB_NAME
+              value: myappdb  # Set the environment variable for the database name
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: db-secrets
+                  key: username  # Get the database username from a Kubernetes secret
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: db-secrets
+                  key: password  # Get the database password from a Kubernetes secret
+
+# Define the Kubernetes service
+apiVersion: v1
+kind: Service
+metadata:
+  name: myapp-service
+spec:
+  selector:
+    app: myapp
+  ports:
+    - name: http
+      port: 80
+      targetPort: 80
+  type: LoadBalancer  # Use a load balancer to expose the service to the Internet
